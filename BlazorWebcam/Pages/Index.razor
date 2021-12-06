@@ -30,6 +30,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        Console.WriteLine("OnInitializedAsync");
         await JSRuntime.InvokeVoidAsync("startVideo", "videoFeed");
 
         //Font stored in wwwroot. Fetch it as byte array, and use it
@@ -65,9 +66,9 @@
         using (var image = Image.Load(imageData))
         {
             image.Mutate(x => x
-                .Flip(FlipMode.Horizontal) //To match mirrored webcam image
+                //.Flip(FlipMode.Horizontal) //To match mirrored webcam image
                 .Fill(Color.ParseHex("0008"), new RectangularPolygon(0,220, 320, 20)) //Set footer bar for caption
-                .DrawText(alignCenter, captionText, captionFont, Color.White, new PointF(8, 230)) //center in footer bar)
+                .DrawText(alignCenter, $"{captionText} @ {DateTime.Now:HH:mm:ss}", captionFont, Color.White, new PointF(8, 230)) //center in footer bar)
             );
             frameUri = image.ToBase64String(JpegFormat.Instance);
         }
