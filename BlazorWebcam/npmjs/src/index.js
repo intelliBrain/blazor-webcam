@@ -1,0 +1,1 @@
+﻿import jsQR from "jsqr"

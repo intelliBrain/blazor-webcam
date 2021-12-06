@@ -55,5 +55,14 @@ function getFrame(src, dest, dotNetHelper) {
     canvas.getContext('2d').drawImage(video, 0, 0, 320, 240);
 
     let dataUrl = canvas.toDataURL("image/jpeg");
+
+    const code = jsQR(dataUrl, 320, 240);
+
+    if (code) {
+        console.log("Found QR code", code);
+    } else {
+        console.log("No QR code");
+    }
+
     dotNetHelper.invokeMethodAsync('ProcessImage', dataUrl);
 }
