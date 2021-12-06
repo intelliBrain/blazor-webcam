@@ -11,7 +11,12 @@
 @using System.IO
 
 <h1>Blazor Webcam</h1>
-<video id="videoFeed" width="320" height="240" /><canvas class="d-none" id="currentFrame" width="320" height="240" /><br />
+<div style="z-index: 0; position: relative; width: 320px; height: 240px;">
+    <video id="videoFeed" style="display: block; object-fit: cover; width: 100%; height: 100%; border: 2px solid orange" width="320" height="240" />
+    <canvas id="canvasVideo" style="display: hidden; width: 100%; height: 100%; position: absolute; top: 0; left: 0; border: 1px solid red" />
+    <canvas id="canvasTrack" style="width: 100%; height: 100%; position: absolute; top: 0; left: 0; border: 1px solid blue" />
+</div>
+<canvas class="d-none" style="border: 3px solid red;" id="currentFrame" width="320" height="240" /><br />
 <input class="form-control mb-3" style="width:320px;" type="text" @bind="captionText" placeholder="Enter caption" />
 <button class="btn btn-primary mb-3" @onclick="CaptureFrame">Capture Frame</button> <br />
 @if (!string.IsNullOrEmpty(frameUri))
@@ -19,19 +24,30 @@
     <img src="@frameUri" />
 }
 
+<p>QR CODE: [@xxx]</p>
+<p>type: [@dotnetHelperType]</p>
+
 
 @code {
     private string captionText;
+    private string dotnetHelperType;
     private string frameUri;
+    private string xxx = "";
 
     FontCollection collection = new FontCollection();
     FontFamily sansFamily;
     Font captionFont;
+    //DotNetObjectReference<Index> dotNetObjectReference = DotNetObjectReference.Create(Index);
 
     protected override async Task OnInitializedAsync()
     {
+        //dotNetObjectReference = DotNetObjectReference.Create(this);
+        //dotnetHelperType = dotNetObjectReference.GetType().FullName;
+        var dotNetHelper = DotNetObjectReference.Create(this);
+        dotnetHelperType = dotNetHelper.GetType().FullName;
+
         Console.WriteLine("OnInitializedAsync");
-        await JSRuntime.InvokeVoidAsync("startVideo", "videoFeed");
+        await JSRuntime.InvokeVoidAsync("startVideo", dotNetHelper, "videoFeed", "canvasVideo", "canvasTrack");
 
         //Font stored in wwwroot. Fetch it as byte array, and use it
         var fontBytes = await Http.GetByteArrayAsync("OpenSans-Regular.ttf");
@@ -42,9 +58,16 @@
 
     private async Task CaptureFrame()
     {
-        await JSRuntime.InvokeAsync<String>("getFrame", "videoFeed", "currentFrame", DotNetObjectReference.Create(this));
+        var dotNetHelper = DotNetObjectReference.Create(this);
+        await JSRuntime.InvokeAsync<String>("getFrame", dotNetHelper, "videoFeed", "currentFrame");
     }
 
+    [JSInvokable]
+    public void QRCodeDetected(string code)
+    {
+        xxx = code ?? "**No Code**";
+        //dotnetHelperType = DateTime.Now.ToLongTimeString();
+    }
 
     [JSInvokable]
     public void ProcessImage(string imageString)
