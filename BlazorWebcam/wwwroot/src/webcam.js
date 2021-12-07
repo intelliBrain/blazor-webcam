@@ -154,7 +154,7 @@ function onAnimationFrame(dotNetHelper, timestamp, video, canvasVideo, canvasTra
 
                 //console.log(`code: **NO CODE **`);
                 //dotNetHelper.invokeMethodAsync('QRCodeDetected', '');
-                lastCode = null;
+                //lastCode = null;
             }
         }
     }
