@@ -1,9 +1,6 @@
-let dhHelper;
-
 function startVideo(dotNetHelper, videoElementName, canvasVideoName, canvasTrackName) {
     console.log("webcam.js: startVideo");
     console.log(dotNetHelper);
-    dhHelper = dotNetHelper;
 
     if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
         navigator.mediaDevices.enumerateDevices().then(devices => {
@@ -51,15 +48,21 @@ function startVideo(dotNetHelper, videoElementName, canvasVideoName, canvasTrack
                 video.play();
             };
 
-            requestAnimationFrame((ts) => onAnimationFrame(dotNetHelper, ts, video, canvasVideo, canvasTrack, lastScan, scanInterval, lastCode));
-
             //mirror image
             //video.style.webkitTransform = "scaleX(-1)";
             //video.style.transform = "scaleX(-1)";
+
+            requestAnimationFrame((ts) => onAnimationFrame(dotNetHelper, ts, video, canvasVideo, canvasTrack, lastScan, scanInterval, lastCode));
         });
     }
 
     console.log("webcam.js: startVideo - completed");
+}
+
+function stopVideo() {
+    console.log("webcam.js: stopVideo");
+
+    console.log("webcam.js: stopVideo - completed");
 }
 
 function getFrame(dotNetHelper, src, dest) {
@@ -78,15 +81,6 @@ function getFrame(dotNetHelper, src, dest) {
     console.log(code);
 
     let dataUrl = canvas.toDataURL("image/jpeg");
-
-    const code = jsQR(dataUrl, 320, 240);
-
-    if (code) {
-        console.log("Found QR code", code);
-    } else {
-        console.log("No QR code");
-    }
-
     dotNetHelper.invokeMethodAsync('ProcessImage', dataUrl);
 }
 
@@ -110,8 +104,8 @@ function onAnimationFrame(dotNetHelper, timestamp, video, canvasVideo, canvasTra
                 // greenyellow = #FFADFF2F
                 // red = #FF3B58
                 const colorFill = "#90EE9050"; // #90EE90 = lightgreen
-                const colorStroke = "#90EE90AA"; // #90EE90 = lightgreen
-                const lineWidthStroke = 2;
+                const colorStroke = "#90EE90CC"; // #90EE90 = lightgreen
+                const lineWidthStroke = 3;
                 drawTrackFrame(
                     canvasTrack,
                     code.location.topLeftCorner,
@@ -132,9 +126,8 @@ function onAnimationFrame(dotNetHelper, timestamp, video, canvasVideo, canvasTra
             }
 
             if (emitEvent) {
-                console.log(`code: ${code.data}`);
-                console.log(dotNetHelper);
-                dhHelper.invokeMethodAsync('QRCodeDetected', `XX: ${timestamp}`);
+                //console.log(`code: ${code.data}`);
+                dotNetHelper.invokeMethodAsync('QRCodeDetected', code.data);
             }
 
             lastCode = code;
@@ -159,8 +152,8 @@ function onAnimationFrame(dotNetHelper, timestamp, video, canvasVideo, canvasTra
                     );
                 }
 
-                console.log(`code: **NO CODE **`);
-                dhHelper.invokeMethodAsync('QRCodeDetected', '');
+                //console.log(`code: **NO CODE **`);
+                dotNetHelper.invokeMethodAsync('QRCodeDetected', '');
                 lastCode = null;
             }
         }

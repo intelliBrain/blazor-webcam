@@ -1,6 +1,7 @@
 ﻿@page "/"
 @inject IJSRuntime JSRuntime
 @inject HttpClient Http
+@implements IDisposable
 @using SixLabors.ImageSharp
 @using SixLabors.ImageSharp.Drawing
 @using SixLabors.ImageSharp.Drawing.Processing
@@ -9,6 +10,7 @@
 @using SixLabors.Fonts
 @using System.Net.Http
 @using System.IO
+@using System.Diagnostics
 
 <h1>Blazor Webcam</h1>
 <div style="z-index: 0; position: relative; width: 320px; height: 240px;">
@@ -25,29 +27,24 @@
 }
 
 <p>QR CODE: [@xxx]</p>
-<p>type: [@dotnetHelperType]</p>
-
 
 @code {
     private string captionText;
-    private string dotnetHelperType;
     private string frameUri;
     private string xxx = "";
 
     FontCollection collection = new FontCollection();
     FontFamily sansFamily;
     Font captionFont;
-    //DotNetObjectReference<Index> dotNetObjectReference = DotNetObjectReference.Create(Index);
+    DotNetObjectReference<Index> dotNetObjectReference;
 
     protected override async Task OnInitializedAsync()
     {
-        //dotNetObjectReference = DotNetObjectReference.Create(this);
-        //dotnetHelperType = dotNetObjectReference.GetType().FullName;
-        var dotNetHelper = DotNetObjectReference.Create(this);
-        dotnetHelperType = dotNetHelper.GetType().FullName;
+        dotNetObjectReference = DotNetObjectReference.Create(this);
+        //var dotNetHelper = DotNetObjectReference.Create(this);
 
         Console.WriteLine("OnInitializedAsync");
-        await JSRuntime.InvokeVoidAsync("startVideo", dotNetHelper, "videoFeed", "canvasVideo", "canvasTrack");
+        await JSRuntime.InvokeVoidAsync("startVideo", dotNetObjectReference, "videoFeed", "canvasVideo", "canvasTrack");
 
         //Font stored in wwwroot. Fetch it as byte array, and use it
         var fontBytes = await Http.GetByteArrayAsync("OpenSans-Regular.ttf");
@@ -56,17 +53,30 @@
         captionFont = sansFamily.CreateFont(16, FontStyle.Regular);
     }
 
+    protected override void OnAfterRender(bool firstRender)
+    {
+        base.OnAfterRender(firstRender);
+        if (firstRender)
+        {
+
+        }
+    }
+
     private async Task CaptureFrame()
     {
-        var dotNetHelper = DotNetObjectReference.Create(this);
-        await JSRuntime.InvokeAsync<String>("getFrame", dotNetHelper, "videoFeed", "currentFrame");
+        //var dotNetHelper = DotNetObjectReference.Create(this);
+        await JSRuntime.InvokeAsync<String>("getFrame", dotNetObjectReference, "videoFeed", "currentFrame");
     }
 
     [JSInvokable]
     public void QRCodeDetected(string code)
     {
-        xxx = code ?? "**No Code**";
+        var qrCode = code.ToString();
+        Console.WriteLine($"QRCodeDetected: {qrCode}");
+
+        xxx = qrCode ?? "**No Code**";
         //dotnetHelperType = DateTime.Now.ToLongTimeString();
+        StateHasChanged();
     }
 
     [JSInvokable]
@@ -94,6 +104,17 @@
                 .DrawText(alignCenter, $"{captionText} @ {DateTime.Now:HH:mm:ss}", captionFont, Color.White, new PointF(8, 230)) //center in footer bar)
             );
             frameUri = image.ToBase64String(JpegFormat.Instance);
+        }
+    }
+
+    public async void Dispose()
+    {
+        GC.SuppressFinalize(this);
+
+        if (dotNetObjectReference != null)
+        {
+           await JSRuntime.InvokeVoidAsync("stopVideo");
+           dotNetObjectReference.Dispose();
         }
     }
 }
